@@ -67,9 +67,8 @@ signal = sma(macd, signalLength)
 hist = (macd - signal) * 2
 
 // ++++++++++ PLOT - Rapid response area ++++++++++ //
-rapidBandTop = plot(risk ? areaHigh : na, title="Rapid signal area top")
-rapidBandBottom = plot(risk ? areaLow : na, title="Rapid signal area bottom")
-fill(rapidBandTop, rapidBandBottom, title="Rapid signal area", color=color.blue, transp=90)
+rapidBandTop = plot(risk ? areaHigh : na, title="Rapid signal area top", style=plot.style_area, transp=75)
+rapidBandBottom = plot(risk ? areaLow : na, title="Rapid signal area bottom", style=plot.style_area, transp=75)
 
 // ++++++++++ PLOT - AO ++++++++++ //
 plot(ao, title="Awesome oscillator", color=change(ao) <= 0 ? color.red : color.green, style=plot.style_histogram)
@@ -79,11 +78,13 @@ plot(hist, title="MACD Histogram", color=hist > 0 ? color.green : color.red, sty
 plot(macd, title="MACD main line", color=color.blue, linewidth=2)
 plot(signal, title="MACD signal line", color=color.orange, linewidth=1)
 
-// ++++++++++ PLOT - Cross marks ++++++++++ //
-plot(not risk ? cross(macd, signal) ? signal : na : na, title="MACD standard cross", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
-plot(risk ? (signal > areaHigh or signal < areaLow) ? cross(macd, signal) ? signal : na : na : na, title="MACD filtred cross ", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
-plot(not risk ? cross(ao, 0) ? 0 : na : na, title="AO cross", style=plot.style_cross, linewidth=3, color=ao > 0 ? color.green : color.red)
-plot(risk ? crossunder(macd, areaHigh) ? areaHigh : na : na, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.red)
-plot(risk ? crossover(macd, areaLow) ? areaLow : na : na, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.green)
+// ++++++++++ PLOT - Cross marks for normal mode ++++++++++ //
+plot(not risk and cross(macd, signal) ? signal : na, title="MACD standard cross", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
+plot(not risk and cross(ao, 0) ? 0 : na, title="AO cross", style=plot.style_cross, linewidth=3, color=ao > 0 ? color.green : color.red)
 plot(cross(ao, hist) ? ao : na, title="AO cross Hist (Close the deal)", style=plot.style_circles, linewidth=2, color=color.yellow)
-plot(risk ? (crossover(macd, hist) or crossunder(macd, hist)) ? ao : na :na, title="MACD cross Hist (Close the deal in risky way)", style=plot.style_circles, linewidth=3, color=color.purple)
+
+// ++++++++++ PLOT - Cross marks for risky mode ++++++++++ //
+plot(risk and (signal > areaHigh or signal < areaLow) and cross(macd, signal) ? signal : na, title="MACD filtred cross ", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
+plot(risk and crossunder(macd, areaHigh) ? areaHigh : na, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.red)
+plot(risk and crossover(macd, areaLow) ? areaLow : na, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.green)
+plot(risk and (crossover(macd, hist) or crossunder(macd, hist)) ? ao : na, title="MACD cross Hist (Close the deal in risky way)", style=plot.style_circles, linewidth=3, color=color.purple)
