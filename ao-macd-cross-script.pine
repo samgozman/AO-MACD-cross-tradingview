@@ -11,7 +11,8 @@
 // Area filled with red/green color is MACD histogram.
 // Area with red/green lines is Awesome Oscillator histogram.
 // Blue thick line is MACD main line. Orange line - MACD signal line.
-// Blueish filled area is a Rapid reaction zone.
+// Blueish filled area is a Rapid reaction zone for aggressive strategy.
+// Purple dot is a risky exit point.
 // 
 // ++++++++++ HOW TO USE ++++++++++ //
 // * Conservative strategy (lower risk) - recommended *
@@ -19,28 +20,44 @@
 // 2) Wait for the confirmation (green/red plus sign on the oscillator axis). This will be your entry point.
 // 3) The intersection of MACD and AO histograms (yellow dot) is your exit point.
 // 
-// * Aggressive strategy (higher risk) *
-// 1) Look at the intersection of the MACD lines marked with a green/red dot.
-// 2) Set up a rapid reaction zone so that the points of MACD intersections on your timeframe did not get into it. (If possible)
-// 3) When the MACD lines cross the border of the rapid zone - open a trade. The further the lines are from each other, the better.
-// 4) Closing the trade is up to you. You can close when the yellow dot forms, or based on common Awesome Oscillator tactics.
+// * Aggressive strategy (higher risk) - turn it on in settings *
+// 1) Set up a rapid reaction area at the comfortable level of risk. 
+//    This value is responsible for how much less reliable the signal we get.
+//    The higher the value, the greater the potential profit. As well as the potential loss and the number of false positives.
+//    This value needs to be adjusted INDIVIDUALLY for each security and time frame.
+// 2) Set up a rapid area length (number of periods).
+//    Rapid area size is calculated based on SMA of previous Awesome Oscillator values. 
+//    This parameter is the length (periods) of a given SMA. It affects how much the rapid area oscillations will be smoothed.
+//    This value is recommended to be adjusted individually for each security and time frame.
+// 3) Look at the intersection of the MACD lines marked with a green/red dot.
+// 4) When the MACD lines cross the border of the rapid zone - open a trade. 
+//    This event will be marked with a plus sign. It is considered a signal only after the previous step has been confirmed.
+//    The further the lines are from each other, the better.
+// 5) Closing the trade is up to you. You can close when the yellow dot forms, or based on common Awesome Oscillator tactics.
+//    Additionally, you have a purple dot for the expected closing of a higher risk trade.
 // 
 // ++++++++++ Warning: The script is provided for educational purposes only. ++++++++++ //
 
-study(title="Awesome Oscillator & MACD Cross", shorttitle="AO & MACD Cross", overlay=false)
+study(title="Awesome Oscillator & MACD Cross", shorttitle="AO & MACD Cross Tactic", overlay=false)
 
 // ++++++++++ INPUTS ++++++++++ //
 source = input(title="Source for MACD", type=input.source, defval=close)
-fastLength = input(12, title="Fast EMA length", minval=1)
-slowLength = input(26, title="Slow EMA length", minval=1)
-signalLength = input(9, title="Signal EMA length", minval=1)
+fastLength = input(12, title="Fast EMA length", type=input.integer, minval=1)
+slowLength = input(26, title="Slow EMA length", type=input.integer, minval=1)
+signalLength = input(9, title="Signal EMA length", type=input.integer, minval=1)
 
-risk = input(title="Aggressive strategy (risky)", type=input.bool, defval=false)
-rapidAreaTop = input(0.15, title="Rapid area high limit", type=input.float, minval=0, maxval=1)
-rapidAreaBottom = input(-0.15, title="Rapid area low limit", type=input.float, maxval=0, minval=-1)
+risk = input(title="Risky Pro mode (read description before use)", type=input.bool, defval=false)
+riskRapidArea = input(defval=50, title="Rapid area size, %", type=input.float, minval=0, maxval=100, step=1)
+riskRapidPeriods = input(defval=21, title="Rapid area size based on AO length", type=input.integer, minval=0, maxval=500, step=1)
 
 // ++++++++++ LOGIC - AO ++++++++++ //
 ao = (sma(hl2, 5) - sma(hl2, 34)) / 2
+
+// ++++++++++ LOGIC - Rapid response area ++++++++++ //
+aoSmaHigh = sma(ao > 0 ? ao : na, riskRapidPeriods)
+aoSmaLow = sma(ao < 0 ? ao : na, riskRapidPeriods)
+areaHigh = aoSmaHigh * (riskRapidArea / 100)
+areaLow = aoSmaLow * (riskRapidArea / 100)
 
 // ++++++++++ LOGIC - MACD ++++++++++ //
 fastEMA = ema(source, fastLength)
@@ -50,9 +67,8 @@ signal = sma(macd, signalLength)
 hist = (macd - signal) * 2
 
 // ++++++++++ PLOT - Rapid response area ++++++++++ //
-
-rapidBandTop = hline(risk ? rapidAreaTop : na, title="Rapid signal area top", linestyle=hline.style_dotted)
-rapidBandBottom = hline(risk ? rapidAreaBottom : na, title="Rapid signal area bottom", linestyle=hline.style_dotted)
+rapidBandTop = plot(risk ? areaHigh : na, title="Rapid signal area top")
+rapidBandBottom = plot(risk ? areaLow : na, title="Rapid signal area bottom")
 fill(rapidBandTop, rapidBandBottom, title="Rapid signal area", color=color.blue, transp=90)
 
 // ++++++++++ PLOT - AO ++++++++++ //
@@ -64,8 +80,10 @@ plot(macd, title="MACD main line", color=color.blue, linewidth=2)
 plot(signal, title="MACD signal line", color=color.orange, linewidth=1)
 
 // ++++++++++ PLOT - Cross marks ++++++++++ //
-plot(cross(macd, signal) ? signal : na, title="MACD cross", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
+plot(not risk ? cross(macd, signal) ? signal : na : na, title="MACD standard cross", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
+plot(risk ? (signal > areaHigh or signal < areaLow) ? cross(macd, signal) ? signal : na : na : na, title="MACD filtred cross ", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
 plot(not risk ? cross(ao, 0) ? 0 : na : na, title="AO cross", style=plot.style_cross, linewidth=3, color=ao > 0 ? color.green : color.red)
-plot(risk ? crossunder(macd, rapidAreaTop) ? rapidAreaTop : na : na, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.red)
-plot(risk ? crossover(macd, rapidAreaBottom) ? rapidAreaBottom : na : na, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.green)
+plot(risk ? crossunder(macd, areaHigh) ? areaHigh : na : na, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.red)
+plot(risk ? crossover(macd, areaLow) ? areaLow : na : na, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.green)
 plot(cross(ao, hist) ? ao : na, title="AO cross Hist (Close the deal)", style=plot.style_circles, linewidth=2, color=color.yellow)
+plot(risk ? (crossover(macd, hist) or crossunder(macd, hist)) ? ao : na :na, title="MACD cross Hist (Close the deal in risky way)", style=plot.style_circles, linewidth=3, color=color.purple)
