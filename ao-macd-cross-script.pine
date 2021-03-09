@@ -18,7 +18,7 @@
 // * Conservative strategy (lower risk) - recommended *
 // 1) Look at the intersection of the MACD lines marked with a green/red dot.
 // 2) Wait for the confirmation (green/red plus sign on the oscillator axis). This will be your entry point.
-// 3) The intersection of MACD and AO histograms (yellow dot) is your exit point.
+// 3) The intersection of MACD and Awesome Oscillator histograms (yellow dot) is your exit point.
 // 
 // * Aggressive strategy (higher risk) - turn it on in settings *
 // 1) Set up a rapid reaction area at the comfortable level of risk. 
@@ -41,17 +41,22 @@
 study(title="Awesome Oscillator & MACD Cross", shorttitle="AO & MACD Cross Tactic", overlay=false)
 
 // ++++++++++ INPUTS ++++++++++ //
-source = input(title="Source for MACD", type=input.source, defval=close)
-fastLength = input(12, title="Fast EMA length", type=input.integer, minval=1)
-slowLength = input(26, title="Slow EMA length", type=input.integer, minval=1)
-signalLength = input(9, title="Signal EMA length", type=input.integer, minval=1)
-
 risk = input(title="Risky Pro mode (read description before use)", type=input.bool, defval=false)
-riskRapidArea = input(defval=50, title="Rapid area size, %", type=input.float, minval=0, maxval=100, step=1)
-riskRapidPeriods = input(defval=21, title="Rapid area size based on AO length", type=input.integer, minval=0, maxval=500, step=1)
+marks = input(title="Display short/long risk marks", type=input.bool, defval=true)
+riskRapidPeriods = input(defval=21, title="Rapid area size based on AO length (periods)", type=input.integer, minval=0, maxval=500, step=1)
+riskRapidArea = input(defval=50, title="Rapid area max size, %", type=input.float, minval=0, maxval=100, step=1)
 
 // ++++++++++ LOGIC - AO ++++++++++ //
 ao = (sma(hl2, 5) - sma(hl2, 34)) / 2
+
+// ++++++++++ LOGIC - AO - tea saucer ++++++++++ //
+// find simple form:   |   |
+//                     | | |
+// color scheme - green red green
+saucer_color_long = change(ao[2]) >= 0 and change(ao[1]) <= 0 and change(ao) >= 0
+saucer_color_short = change(ao[2]) <= 0 and change(ao[1]) >= 0 and change(ao) <= 0
+saucer_form =  abs(ao[2]) > abs(ao[1]) and abs(ao[1]) < abs(ao)
+saucer_long = saucer_color_long and saucer_form
 
 // ++++++++++ LOGIC - Rapid response area ++++++++++ //
 aoSmaHigh = sma(ao > 0 ? ao : na, riskRapidPeriods)
@@ -60,11 +65,28 @@ areaHigh = aoSmaHigh * (riskRapidArea / 100)
 areaLow = aoSmaLow * (riskRapidArea / 100)
 
 // ++++++++++ LOGIC - MACD ++++++++++ //
-fastEMA = ema(source, fastLength)
-slowEMA = ema(source, slowLength)
+fastEMA = ema(close, 12)
+slowEMA = ema(close, 26)
 macd = fastEMA - slowEMA
-signal = sma(macd, signalLength)
+signal = sma(macd, 9)
 hist = (macd - signal) * 2
+
+// ++++++++++ RULES (NORMAL) ++++++++++ //
+macdNormalCross = not risk and cross(macd, signal) ? signal : na
+aoNormalCross = not risk and cross(ao, 0) ? 0 : na
+aoHistCross = cross(ao, hist) ? ao : na
+
+// ++++++++++ RULES (RISK) ++++++++++ //
+macdFilteredCross = risk and (signal > areaHigh or signal < areaLow) and cross(macd, signal) ? signal : na
+macdShortRiskCross = risk and crossunder(macd, areaHigh) ? areaHigh : na
+macdLongRiskCross = risk and crossover(macd, areaLow) ? areaLow : na
+macdHistRiskCross = risk and (crossover(macd, hist) or crossunder(macd, hist)) ? ao : na
+
+// ++++++++++ RULES (RISK - BETA) ++++++++++ //
+aoHighest = highest(ao, 50)[1]
+aoLowest = lowest(ao, 50)[1]
+macdRussianRouletteShort = macdFilteredCross > areaHigh * 2 and macdFilteredCross > aoHighest * 0.75 ? signal : na
+macdRussianRouletteLong = macdFilteredCross < aoLowest / 2 and macdFilteredCross < aoLowest * 0.75  ? signal : na
 
 // ++++++++++ PLOT - Rapid response area ++++++++++ //
 rapidBandTop = plot(risk ? areaHigh : na, title="Rapid signal area top", style=plot.style_area, transp=75)
@@ -79,12 +101,24 @@ plot(macd, title="MACD main line", color=color.blue, linewidth=2)
 plot(signal, title="MACD signal line", color=color.orange, linewidth=1)
 
 // ++++++++++ PLOT - Cross marks for normal mode ++++++++++ //
-plot(not risk and cross(macd, signal) ? signal : na, title="MACD standard cross", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
-plot(not risk and cross(ao, 0) ? 0 : na, title="AO cross", style=plot.style_cross, linewidth=3, color=ao > 0 ? color.green : color.red)
-plot(cross(ao, hist) ? ao : na, title="AO cross Hist (Close the deal)", style=plot.style_circles, linewidth=2, color=color.yellow)
+plot(macdNormalCross, title="MACD standard cross", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
+plot(aoNormalCross, title="AO cross", style=plot.style_cross, linewidth=3, color=ao > 0 ? color.green : color.red)
+plot(aoHistCross, title="AO cross Hist (Close the deal)", style=plot.style_circles, linewidth=2, color=color.yellow)
 
 // ++++++++++ PLOT - Cross marks for risky mode ++++++++++ //
-plot(risk and (signal > areaHigh or signal < areaLow) and cross(macd, signal) ? signal : na, title="MACD filtred cross ", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
-plot(risk and crossunder(macd, areaHigh) ? areaHigh : na, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.red)
-plot(risk and crossover(macd, areaLow) ? areaLow : na, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.green)
-plot(risk and (crossover(macd, hist) or crossunder(macd, hist)) ? ao : na, title="MACD cross Hist (Close the deal in risky way)", style=plot.style_circles, linewidth=3, color=color.purple)
+plot(macdFilteredCross, title="MACD filtred cross ", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
+plot(macdShortRiskCross, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.red)
+plot(macdLongRiskCross, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.green)
+plot(macdHistRiskCross, title="MACD cross Hist (Close the deal in risky way)", style=plot.style_circles, linewidth=3, color=color.purple)
+
+plotshape(macdShortRiskCross and marks, title="MACD Risk short cross mark", text="Short: risk level 2", color = color.red,style=shape.triangledown,location=location.top,transp=0,size=size.tiny)
+plotshape(macdLongRiskCross and marks, title="MACD Risk long cross mark", text="Long: risk level 2", color = color.green,style=shape.triangleup,location=location.bottom,transp=0,size=size.tiny)
+
+// ++++++++++ PLOT - Cross marks for risky beta mode ++++++++++ //
+plotshape(macdRussianRouletteLong and marks, title="MACD Russian Roulette Long Cross", text="Long: risk level 3", color = color.green,style=shape.flag,location=location.bottom,transp=0,size=size.small)
+plotshape(macdRussianRouletteShort and marks, title="MACD Russian Roulette Short Cross", text="Short: risk level 3", color = color.red,style=shape.flag,location=location.top,transp=0,size=size.small)
+
+// ++++++++++ PLOT - AO figures ++++++++++ //
+plotshape(saucer_long and ao > 0, title="Tea saucer", text="Saucer", color = color.green, style=shape.triangledown, location=location.top, transp=0,size=size.tiny, offset=-1)
+plotshape(saucer_color_short and ao < 0, title="Tea saucer", text="Saucer", color = color.red, style=shape.triangleup, location=location.bottom, transp=0,size=size.tiny, offset=-1)
+
