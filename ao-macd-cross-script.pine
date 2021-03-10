@@ -41,6 +41,8 @@
 study(title="Awesome Oscillator & MACD Cross", shorttitle="AO & MACD Cross Tactic", overlay=false)
 
 // ++++++++++ INPUTS ++++++++++ //
+ao_saucer = input(title="Display AO tea saucers", type=input.bool, defval=true)
+ao_saucer_filter = input(title="Filter saucers between 1M -1D timeframes", type=input.bool, defval=true)
 risk = input(title="Risky Pro mode (read description before use)", type=input.bool, defval=false)
 marks = input(title="Display short/long risk marks", type=input.bool, defval=true)
 riskRapidPeriods = input(defval=21, title="Rapid area size based on AO length (periods)", type=input.integer, minval=0, maxval=500, step=1)
@@ -57,6 +59,21 @@ saucer_color_long = change(ao[2]) >= 0 and change(ao[1]) <= 0 and change(ao) >= 
 saucer_color_short = change(ao[2]) <= 0 and change(ao[1]) >= 0 and change(ao) <= 0
 saucer_form =  abs(ao[2]) > abs(ao[1]) and abs(ao[1]) < abs(ao)
 saucer_long = saucer_color_long and saucer_form
+saucer_short = saucer_color_short and saucer_form
+
+// Check for time period. 
+// Saucer works better in the timeframe range. For example saucer in 1h works better in 24h range.
+// Saucer in D works better in 7 days period. 
+//  In other words, if a tea saucer is on 1D detected between February 28 and March 1, it will be filtered.
+if (saucer_long or saucer_short) and ao_saucer_filter
+    if timeframe.isdaily
+        if dayofmonth > (dayofmonth + timeframe.multiplier)
+            saucer_short := false
+            saucer_long := false
+    else if timeframe.isminutes
+        if dayofmonth(time) != dayofmonth(time + 1000 * 60 * timeframe.multiplier)
+            saucer_short := false
+            saucer_long := false
 
 // ++++++++++ LOGIC - Rapid response area ++++++++++ //
 aoSmaHigh = sma(ao > 0 ? ao : na, riskRapidPeriods)
@@ -111,14 +128,12 @@ plot(macdShortRiskCross, title="MACD Risk cross", style=plot.style_cross, linewi
 plot(macdLongRiskCross, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.green)
 plot(macdHistRiskCross, title="MACD cross Hist (Close the deal in risky way)", style=plot.style_circles, linewidth=3, color=color.purple)
 
-plotshape(macdShortRiskCross and marks, title="MACD Risk short cross mark", text="Short: risk level 2", color = color.red,style=shape.triangledown,location=location.top,transp=0,size=size.tiny)
-plotshape(macdLongRiskCross and marks, title="MACD Risk long cross mark", text="Long: risk level 2", color = color.green,style=shape.triangleup,location=location.bottom,transp=0,size=size.tiny)
-
 // ++++++++++ PLOT - Cross marks for risky beta mode ++++++++++ //
-plotshape(macdRussianRouletteLong and marks, title="MACD Russian Roulette Long Cross", text="Long: risk level 3", color = color.green,style=shape.flag,location=location.bottom,transp=0,size=size.small)
-plotshape(macdRussianRouletteShort and marks, title="MACD Russian Roulette Short Cross", text="Short: risk level 3", color = color.red,style=shape.flag,location=location.top,transp=0,size=size.small)
+plot(macdRussianRouletteShort, title="MACD Russian Roulette Short Cross", style=plot.style_columns, linewidth=3, color= color.red, transp=0)
+plot(macdRussianRouletteLong, title="MACD Russian Roulette Long Cross", style=plot.style_columns, linewidth=3, color= color.green, transp=0)
+plotshape(macdRussianRouletteLong and marks, title="MACD Russian Roulette Long Cross", text="Long: Russian Roulette", color = color.green,style=shape.flag,location=location.bottom,transp=0,size=size.small)
+plotshape(macdRussianRouletteShort and marks, title="MACD Russian Roulette Short Cross", text="Short: Russian Roulette", color = color.red,style=shape.flag,location=location.top,transp=0,size=size.small)
 
 // ++++++++++ PLOT - AO figures ++++++++++ //
-plotshape(saucer_long and ao > 0, title="Tea saucer", text="Saucer", color = color.green, style=shape.triangledown, location=location.top, transp=0,size=size.tiny, offset=-1)
-plotshape(saucer_color_short and ao < 0, title="Tea saucer", text="Saucer", color = color.red, style=shape.triangleup, location=location.bottom, transp=0,size=size.tiny, offset=-1)
-
+plotshape(ao_saucer and saucer_long and ao > 0, title="Tea saucer", text="Saucer", color = color.green, style=shape.diamond, location=location.top, transp=0,size=size.tiny, offset=-1)
+plotshape(ao_saucer and saucer_short and ao < 0, title="Tea saucer", text="Saucer", color = color.red, style=shape.diamond, location=location.bottom, transp=0,size=size.tiny, offset=-1)
