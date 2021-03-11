@@ -44,7 +44,6 @@ study(title="Awesome Oscillator & MACD Cross", shorttitle="AO & MACD Cross Tacti
 ao_saucer = input(title="Display AO tea saucers", type=input.bool, defval=true)
 ao_saucer_filter = input(title="Filter saucers between 1M -1D timeframes", type=input.bool, defval=true)
 risk = input(title="Risky Pro mode (read description before use)", type=input.bool, defval=false)
-marks = input(title="Display short/long risk marks", type=input.bool, defval=true)
 riskRapidPeriods = input(defval=21, title="Rapid area size based on AO length (periods)", type=input.integer, minval=0, maxval=500, step=1)
 riskRapidArea = input(defval=50, title="Rapid area max size, %", type=input.float, minval=0, maxval=100, step=1)
 
@@ -90,7 +89,7 @@ hist = (macd - signal) * 2
 
 // ++++++++++ RULES (NORMAL) ++++++++++ //
 macdNormalCross = not risk and cross(macd, signal) ? signal : na
-aoNormalCross = not risk and cross(ao, 0) ? 0 : na
+aoNormalCross = cross(ao, 0) ? 0 : na
 aoHistCross = cross(ao, hist) ? ao : na
 
 // ++++++++++ RULES (RISK) ++++++++++ //
@@ -131,8 +130,8 @@ plot(macdHistRiskCross, title="MACD cross Hist (Close the deal in risky way)", s
 // ++++++++++ PLOT - Cross marks for risky beta mode ++++++++++ //
 plot(macdRussianRouletteShort, title="MACD Russian Roulette Short Cross", style=plot.style_columns, linewidth=3, color= color.red, transp=0)
 plot(macdRussianRouletteLong, title="MACD Russian Roulette Long Cross", style=plot.style_columns, linewidth=3, color= color.green, transp=0)
-plotshape(macdRussianRouletteLong and marks, title="MACD Russian Roulette Long Cross", text="Long: Russian Roulette", color = color.green,style=shape.flag,location=location.bottom,transp=0,size=size.small)
-plotshape(macdRussianRouletteShort and marks, title="MACD Russian Roulette Short Cross", text="Short: Russian Roulette", color = color.red,style=shape.flag,location=location.top,transp=0,size=size.small)
+plotshape(macdRussianRouletteLong, title="MACD Russian Roulette Long Cross", text="Long: Russian Roulette", color = color.green,style=shape.flag,location=location.bottom,transp=0,size=size.small)
+plotshape(macdRussianRouletteShort, title="MACD Russian Roulette Short Cross", text="Short: Russian Roulette", color = color.red,style=shape.flag,location=location.top,transp=0,size=size.small)
 
 // ++++++++++ PLOT - AO figures ++++++++++ //
 plotshape(ao_saucer and saucer_long and ao > 0, title="Tea saucer", text="Saucer", color = color.green, style=shape.diamond, location=location.top, transp=0,size=size.tiny, offset=-1)
