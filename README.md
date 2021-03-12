@@ -1,5 +1,9 @@
 # Awesome Oscillator & MACD Cross Tactic
 
+[Link to the script on TradingView](https://ru.tradingview.com/script/9VAqm1BZ-awesome-oscillator-macd-cross-tactic/)
+
+[DESCRIPTION IN RUSSIAN 🇷🇺](doc/RU-README.md)
+
 Oscillator for Tradingview based on MACD and Awesome Oscillator. This oscillator is designed to identify potential local growth or decline in prices as part of a trend movement.
 
 It shows itself best in stocks, that they move with regular cooldowns, so on the MACD oscillator they are closer to a sinusoid than others. For example MCDONALD'S ($MCD) is quite suitable for this role. On "Tesla's", the oscillator is not very efficient.
