@@ -1,7 +1,8 @@
 //@version=4
+// 
 // Awesome Oscillator (AO) and MACD cross by samgozman (https://github.com/samgozman)
 // 
-// Detailed instruction how o use this script: https://github.com/samgozman/AO-MACD-cross-tradingview
+// Detailed instruction how to use this script: https://github.com/samgozman/AO-MACD-cross-tradingview
 // 
 // ++++++++++ Warning: The script is provided for educational purposes only. ++++++++++ //
 
@@ -55,12 +56,11 @@ signal = sma(macd, 9)
 hist = (macd - signal) * 2
 
 // ++++++++++ RULES (NORMAL) ++++++++++ //
-macdNormalCross = not risk and cross(macd, signal) ? signal : na
+macdNormalCross = cross(macd, signal) ? signal : na
 aoNormalCross = cross(ao, 0) ? 0 : na
 aoHistCross = cross(ao, hist) ? ao : na
 
 // ++++++++++ RULES (RISK) ++++++++++ //
-macdFilteredCross = risk and (signal > areaHigh or signal < areaLow) and cross(macd, signal) ? signal : na
 macdShortRiskCross = risk and crossunder(macd, areaHigh) ? areaHigh : na
 macdLongRiskCross = risk and crossover(macd, areaLow) ? areaLow : na
 macdHistRiskCross = risk and (crossover(macd, hist) or crossunder(macd, hist)) ? ao : na
@@ -68,8 +68,8 @@ macdHistRiskCross = risk and (crossover(macd, hist) or crossunder(macd, hist)) ?
 // ++++++++++ RULES (RISK - BETA) ++++++++++ //
 aoHighest = highest(ao, 50)[1]
 aoLowest = lowest(ao, 50)[1]
-macdRussianRouletteShort = macdFilteredCross > areaHigh * 2 and macdFilteredCross > aoHighest * 0.75 ? signal : na
-macdRussianRouletteLong = macdFilteredCross < aoLowest / 2 and macdFilteredCross < aoLowest * 0.75  ? signal : na
+macdRussianRouletteShort = risk ? macdNormalCross > areaHigh * 2 and macdNormalCross > aoHighest * 0.75 ? signal : na : na
+macdRussianRouletteLong = risk ? macdNormalCross < aoLowest / 2 and macdNormalCross < aoLowest * 0.75  ? signal : na : na
 
 // ++++++++++ PLOT - Rapid response area ++++++++++ //
 rapidBandTop = plot(risk ? areaHigh : na, title="Rapid signal area top", style=plot.style_area, transp=75)
@@ -89,7 +89,6 @@ plot(aoNormalCross, title="AO cross", style=plot.style_cross, linewidth=3, color
 plot(aoHistCross, title="AO cross Hist (Close the deal)", style=plot.style_circles, linewidth=2, color=color.yellow)
 
 // ++++++++++ PLOT - Cross marks for risky mode ++++++++++ //
-plot(macdFilteredCross, title="MACD filtred cross ", style=plot.style_circles, linewidth=3, color=macd > signal ? color.green : color.red)
 plot(macdShortRiskCross, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.red)
 plot(macdLongRiskCross, title="MACD Risk cross", style=plot.style_cross, linewidth=3, color= color.green)
 plot(macdHistRiskCross, title="MACD cross Hist (Close the deal in risky way)", style=plot.style_circles, linewidth=3, color=color.purple)

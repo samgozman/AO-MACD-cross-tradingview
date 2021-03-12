@@ -31,7 +31,7 @@ An oscillator consists of 4 main components:
 
 The AO histogram is plotted according to the classic formula, based on the SMA with periods of 34 and 5. The MACD is plotted on the EMAs of 12, 26 and 9.
 
-**Rapid Reaction Zone** - an optional field that can be enabled in the script settings (Risky Pro mode). This zone is calculated as SMA of AO with a period of 21 and subsequent correction by 50% (these values can be changed). The purpose of the Rapid Reaction Zone is to mark an area where the signal often likes to reverse without breaking through the 0 axis. MACD crossovers are not highlighted in this area. More details on how to work with it will be described below in the strategies section.
+**Rapid Reaction Zone** - an optional field that can be enabled in the script settings (Risky Pro mode). This zone is calculated as SMA of AO with a period of 21 and subsequent correction by 50% (these values can be changed). The purpose of the Rapid Reaction Zone is to mark an area where the signal often likes to reverse without breaking through the 0 axis. More details on how to work with it will be described below in the strategies section.
 
 There are also additional symbols presented in the composite chart, which should serve as visual markers:
 
