@@ -1,5 +1,7 @@
 # Awesome Oscillator & MACD Cross Tactic
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C1DI4VL)
+
 [Link to the script on TradingView](https://ru.tradingview.com/script/9VAqm1BZ-awesome-oscillator-macd-cross-tactic/)
 
 [DESCRIPTION IN RUSSIAN 🇷🇺](doc/RU-README.md)
